@@ -26,8 +26,9 @@ typedef enum { RWITM, MODIFIED, EXCLUSIVE, SHARED, INVALID } MESIState;
 typedef struct
 // CONTEÚDO DA TAG DAS CACHES 
 {
-    int pos;    // será obtido pela função obterBloco
-    MESIState estado;
+    int nBloco;          // n° do bloco na RAM, obtido pela função obterBloco
+    int offsetBloco;     // obtido pela função obterOffset
+    MESIState estado;    // RWITM, M, E, S, I
 } Tag;
 
 typedef struct
@@ -61,6 +62,7 @@ typedef struct
 } Ram;
 
 
+
 /* ********************************************************************* */
 /* ********************************************************************* */
 /* Inicialização das Caches e RAM */
@@ -75,7 +77,13 @@ Cache CACHE[CPU_QNT];
 /* Funções */
 
 
+int obterBloco(int endereco) {
+    return endereco / BLOCO_TAM; // Calcula o bloco da RAM com base no endereço
+}
 
+int obterOffset(int endereco) {
+    return endereco % BLOCO_TAM; // Calcula o offset dentro do bloco
+}
 
 
 
