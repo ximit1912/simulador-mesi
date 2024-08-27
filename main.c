@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <pthread.h>
 
 
 /* ********************************************************************* */
@@ -17,12 +18,11 @@
 char MESI[5] = {'R','M','E','S','I'};
 
 
-/* PARA DEPOIS, THREADS!
-    typedef struct 
-    {
-        int id;       
-    }tPacote;
-*/
+
+typedef struct 
+{
+    int id;       
+}tPacote;
 
 
 /* ********************************************************************* */
@@ -154,11 +154,55 @@ void main()
     initCache(&CACHE[1]);
     initCache(&CACHE[2]); 
 
+    // INICIALIZAÇÃO DAS THREADS e seus pacotes (por enquanto só ID, talvez depois só tbm)
+    pthread_t thread[CPU_QNT];
+    int iret[CPU_QNT];
+    tPacote t[CPU_QNT];
+    
+    for(int i=0; i<CPU_QNT; i++)
+    {
+        t[i].id = i+1;
+    }
+
     // Auxiliares para verificação da RAM e CACHEs
     auxConteudoRAM();
     auxConteudoCache(1);
     auxConteudoCache(2);
     auxConteudoCache(3);
 
+    char opcao;
+
+    printf("\n\n***********************************************************");
+    printf  ("\n*******             Escolha um <#CPU#>              *******");
+    printf("\n\n******                <1>  <2>  <3>                  ******");
+    printf("\n\n***********************************************************");
+    printf("\n\n******   Ou tecle qualquer outra coisa para <SAIR>   ******");
+    printf("\n\n*******                    <?>                      *******");
+    printf("\n\n***********************************************************");
+    scanf("%d", &opcao);
+
+
+
+    switch (opcao)
+    {
+    case '1':
+        
+        break;
+    
+
+    case '2':
+
+        break;
+
+
+    case '3':
+
+
+        break;
+
+
+    default:
+        break;
+    }
 
 }
