@@ -13,9 +13,16 @@
 #define CACHE_TAM 5
 #define CPU_QNT 3
 
-typedef enum { RWITM, MODIFIED, EXCLUSIVE, SHARED, INVALID } MESIState;
-// ESTADOS PROTOCOLO MESI (RWITM: Read With Intent To Modifie) 
+// ESTADOS PROTOCOLO MESI (R: RWITM - Read With Intent To Modifie) 
+char MESI[5] = {'R','M','E','S','I'};
 
+
+/* PARA DEPOIS, THREADS!
+    typedef struct 
+    {
+        int id;       
+    }tPacote;
+*/
 
 
 /* ********************************************************************* */
@@ -26,9 +33,8 @@ typedef enum { RWITM, MODIFIED, EXCLUSIVE, SHARED, INVALID } MESIState;
 typedef struct
 // CONTEÚDO DA TAG DAS CACHES 
 {
-    int nBloco;          // n° do bloco na RAM, obtido pela função obterBloco
-    int offsetBloco;     // obtido pela função obterOffset
-    MESIState estado;    // RWITM, M, E, S, I
+    int posBloco;   // n° do bloco na RAM, obtido pela função obterBloco
+    char estado;    // RWITM, M, E, S, I
 } Tag;
 
 typedef struct
@@ -46,8 +52,8 @@ typedef struct
 typedef struct 
 // CONTEÚDO DAS CACHES 
 {
-    cacheLinha linhas[CACHE_TAM];
-    int fifoIndice; // para o algoritmo de substituição FIFO
+    cacheLinha linha[CACHE_TAM];
+    int *fifoIndice; // para o algoritmo de substituição FIFO
 } Cache;
 
 
@@ -77,14 +83,61 @@ Cache CACHE[CPU_QNT];
 /* Funções */
 
 
-int obterBloco(int endereco) {
-    return endereco / BLOCO_TAM; // Calcula o bloco da RAM com base no endereço
+int obterBloco(int endereco) 
+// Calcula o bloco da RAM com base no endereço
+{
+    return endereco / BLOCO_TAM; 
 }
 
-int obterOffset(int endereco) {
-    return endereco % BLOCO_TAM; // Calcula o offset dentro do bloco
+int obterOffset(int endereco) 
+// Calcula o offset dentro do bloco
+{
+    return endereco % BLOCO_TAM; 
 }
 
+
+
+void initRAM(Ram *ram) 
+// inicializa ram
+{
+    srand(time(NULL));
+    for (int i = 0; i < RAM_TAM; i++) {
+        ram->dado[i] = rand() % 1000; // Valores aleatórios
+    }
+}
+
+void initCache(Cache *cache) 
+// inicializa cache
+{
+    for (int i = 0; i < CACHE_TAM; i++) {
+        cache->linha[i].bloco.dado[0] = -1; // 
+        cache->linha[i].bloco.dado[1] = -1; // Indicando que a linha está vazia
+        cache->linha[i].tag.estado = 'I';
+        cache->linha[i].tag.posBloco = -1;
+    }
+    
+    cache->fifoIndice = (int *) calloc (5, sizeof(int)); 
+}
+
+// MOSTRA CONTEÚDO DA RAM (AUXILIAR)
+void auxConteudoRAM()
+{
+    for(int i = 0; i < RAM_TAM; i++)
+        printf("\npos[%d] - %d", i, RAM.dado[i]);
+}
+
+// MOSTRA CONTEÚDO DAS CACHES (AUXILIAR)
+void auxConteudoCache(int n)
+{
+    int i;
+
+    printf("\n\nCACHE %d:", n);
+    for(i = 0; i < CACHE_TAM; i++)
+    {
+        printf("\n[%d] | tag[bloco : %d, estado: %c] | dado: %d|", i, CACHE[n-1].linha[i].tag.posBloco, CACHE[n-1].linha[i].tag.estado, CACHE[n-1].linha[i].bloco.dado[0]);
+        printf("\n    |                            | dado: %d|\n", CACHE[n-1].linha[i].bloco.dado[1]);
+    }
+}
 
 
 /* ********************************************************************* */
@@ -95,6 +148,17 @@ void main()
 {
     printf("\nBEM VINDO AO SIMULADOR DE MEMORIA CACHE GERENCIADA POR PROTOCOLO MESI");
 
+    // INICIALIZA A RAM E AS 3 CACHES 
+    initRAM(&RAM);
+    initCache(&CACHE[0]);
+    initCache(&CACHE[1]);
+    initCache(&CACHE[2]); 
+
+    // Auxiliares para verificação da RAM e CACHEs
+    auxConteudoRAM();
+    auxConteudoCache(1);
+    auxConteudoCache(2);
+    auxConteudoCache(3);
 
 
 }
