@@ -21,7 +21,10 @@ char MESI[5] = {'R','M','E','S','I'};
 
 typedef struct 
 {
-    int id;       
+    int id;  
+
+    /* outras variáveis se necessário */
+
 }tPacote;
 
 
@@ -54,6 +57,7 @@ typedef struct
 {
     cacheLinha linha[CACHE_TAM];
     int *fifoIndice; // para o algoritmo de substituição FIFO
+    int preenchida;
 } Cache;
 
 
@@ -116,7 +120,8 @@ void initCache(Cache *cache)
         cache->linha[i].tag.posBloco = -1;
     }
     
-    cache->fifoIndice = (int *) calloc (5, sizeof(int)); 
+    cache->fifoIndice = (int *) calloc (5, sizeof(int));
+    cache->preenchida = 0; 
 }
 
 // MOSTRA CONTEÚDO DA RAM (AUXILIAR)
@@ -138,6 +143,74 @@ void auxConteudoCache(int n)
         printf("\n    |                            | dado: %d|\n", CACHE[n-1].linha[i].bloco.dado[1]);
     }
 }
+
+
+
+
+
+
+// 
+
+
+
+
+
+
+
+
+
+// FUNÇÃO PRINCIPAL DAS THREADS (PROCESSADORES)
+void *simula(void *ptr)
+{
+    tPacote *t = (void *) ptr;
+
+    int op, end, transacao;
+
+    printf("\n\n###############################################");
+    printf(  "\n############## PROCESSADOR <%d> ################", t->id);
+    printf(  "\n## Voce deseja fazer uma leitura ou escrita? ##");
+    printf(  "\n##               Leitura <1>                 ##");
+    printf(  "\n##               Escrita <2>                 ##");
+    printf(  "\n###############################################\nL/E: ");
+    scanf(" %c", &op);
+
+    switch (op)
+    {
+    case '1':
+        printf("\n\n***** <1> LEITURA - SOLICITACAO DE DADO SEM ALTERACAO DO VALOR: *****");
+        printf(  "\n* -> Entre com o endereco da memoria principal desejado [0 <= end <= 49]: ");
+        scanf("%d", end);
+        
+        // transacao = int leitura(int idCache, int enderecoRam);
+            // void gerenciaCoerencia(int idCache, int transacao);
+
+        break;
+    
+    case '2':
+        printf("\n\n***** <2> ESCRITA - SOLICITACAO DE DADO COM ALTERACAO DO VALOR: *****");
+        printf(  "\n* -> Entre com o endereco da memoria principal desejado [0 <= end <= 49]: ");
+        scanf("%d", end);
+
+        // transacao = int escrita(int idCache, int enderecoRam);
+            // gerenciaCoerencia(int idCache, int transacao)
+
+        break;
+    
+    default:
+        printf("\nOPCAO INVALIDA! ABORTANDO ...");
+
+        break;
+    }
+
+
+}
+
+
+
+
+
+
+
 
 
 /* ********************************************************************* */
@@ -166,11 +239,15 @@ void main()
 
     // Auxiliares para verificação da RAM e CACHEs
     auxConteudoRAM();
+    printf("\n----------------------------------------------------------------\n");
     auxConteudoCache(1);
+    printf("\n----------------------------------------------------------------\n");
     auxConteudoCache(2);
+    printf("\n----------------------------------------------------------------\n");
     auxConteudoCache(3);
+    printf("\n----------------------------------------------------------------\n");
 
-    char opcao;
+    char opCPU;
 
     printf("\n\n***********************************************************");
     printf  ("\n*******             Escolha um <#CPU#>              *******");
@@ -178,26 +255,31 @@ void main()
     printf("\n\n***********************************************************");
     printf("\n\n******   Ou tecle qualquer outra coisa para <SAIR>   ******");
     printf("\n\n*******                    <?>                      *******");
-    printf("\n\n***********************************************************");
-    scanf("%d", &opcao);
+    printf("\n\n***********************************************************\nCPU: ");
+    scanf(" %c", &opCPU);
 
 
 
-    switch (opcao)
+    switch (opCPU)
     {
     case '1':
-        
+        iret[0] = pthread_create(&thread[0], NULL, simula, (void*) &t[0]);
+
+        pthread_join(thread[0], NULL);
         break;
     
 
     case '2':
+        iret[1] = pthread_create(&thread[1], NULL, simula, (void*) &t[1]);
 
+        pthread_join(thread[1], NULL);
         break;
 
 
     case '3':
+        iret[2] = pthread_create(&thread[2], NULL, simula, (void*) &t[2]);
 
-
+        pthread_join(thread[2], NULL);
         break;
 
 
