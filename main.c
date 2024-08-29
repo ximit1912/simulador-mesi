@@ -105,14 +105,16 @@ int obterOffset(int endereco)
 void initRAM(Ram *ram) 
 // inicializa ram
 {
+    printf("\n... INICIALIZACAO RAM ...\n");
     for (int i = 0; i < RAM_TAM; i++) {
         ram->dado[i] = rand() % 1000; // Valores aleatórios
     }
 }
 
-void initCache(Cache *cache) 
+void initCache(Cache *cache, int id) 
 // inicializa cache
 {
+    printf("\n... INICIALIZACAO CACHE %d ...\n", id);
     for (int i = 0; i < CACHE_TAM; i++) {
         cache->linha[i].bloco.dado[0] = -1; // 
         cache->linha[i].bloco.dado[1] = -1; // Indicando que a linha está vazia
@@ -125,40 +127,53 @@ void initCache(Cache *cache)
     cache->preenchida = 0; 
 }
 
+
+
 // MOSTRA CONTEÚDO DA RAM (AUXILIAR)
 void auxConteudoRAM()
 {
+    printf("\n\n#########\n");
+    printf(    "###RAM###\n");
+    printf(    "#########");
     for(int i = 0; i < RAM_TAM; i++)
         printf("\npos[%d] - %d", i, RAM.dado[i]);
 }
 
 // MOSTRA CONTEÚDO DAS CACHES (AUXILIAR)
-void auxConteudoCache(int n)
+void auxConteudoCache(int id)
 {
-    int i;
-
-    printf("\n\nCACHE %d:", n);
-    for(i = 0; i < CACHE_TAM; i++)
+    printf("\n\n#####################################\n");
+    printf(    "###############CACHE-%d###############\n", id);
+    printf(    "#####################################");
+    for(int i = 0; i < CACHE_TAM; i++)
     {
-        printf("\n[%d] | tag[bloco : %d, estado: %c] | dado: %d|", i, CACHE[n-1].linha[i].tag.posBloco, CACHE[n-1].linha[i].tag.estado, CACHE[n-1].linha[i].bloco.dado[0]);
-        printf("\n    |                            | dado: %d|\n", CACHE[n-1].linha[i].bloco.dado[1]);
+        printf("\nLINHA[%d] | TAG[bloco : %d, estado: %c] \n", i, CACHE[id-1].linha[i].tag.posBloco, CACHE[id-1].linha[i].tag.estado);
+        printf("                   #DADO: %d\n", CACHE[id-1].linha[i].bloco.dado[0]); 
+        printf("                   #DADO: %d\n", CACHE[id-1].linha[i].bloco.dado[1]);
     }
 }
 
+
+
+
+// IMPRIME A LINHA INDICADA
 void imprimeLinha(int linha, int idCache, int dado)
 {
-    printf(  "\n[%d] | tag[bloco : %d, estado: %c]  | ", linha, CACHE[idCache-1].linha[linha].tag.posBloco, CACHE[idCache-1].linha[linha].tag.estado);
+    printf(  "\nLINHA[%d] | TAG[bloco : %d, estado: %c] |\n", linha, CACHE[idCache-1].linha[linha].tag.posBloco, CACHE[idCache-1].linha[linha].tag.estado);
                         if(!dado)
                         {
-                            printf("dado: %d <--", CACHE[idCache-1].linha[linha].bloco.dado[0]);
-                            printf("\n    |                            | dado: %d\n", CACHE[idCache-1].linha[linha].bloco.dado[1]);
+                            printf("                   #DADO: %d <--\n", CACHE[idCache-1].linha[linha].bloco.dado[0]);
+                            printf("                   #DADO: %d\n", CACHE[idCache-1].linha[linha].bloco.dado[1]);
                         }
                         else
                             {
-                                printf("dado: %d    ", CACHE[idCache-1].linha[linha].bloco.dado[0]);
-                                printf("\n    |                           | dado: %d <--\n", CACHE[idCache-1].linha[linha].bloco.dado[1]);
+                                printf("                    #DADO: %d\n", CACHE[idCache-1].linha[linha].bloco.dado[0]);
+                                printf("                    #DADO: %d <--\n", CACHE[idCache-1].linha[linha].bloco.dado[1]);
                             }   
 }
+
+
+
 
 /* 
 VERIFICA NAS OUTRAS CACHES SE HÁ CÓPIAS
@@ -262,62 +277,15 @@ int procuraCopias(int idCache, int *indCopias, int bloco)
 
 
 
+
 /* 
-LEITURA: 
-1- VERIFICA SE EXISTE NA CACHE
-    1a- SE SIM (READ HIT  - 0), APENAS MOSTRA O DADO (OU FAZ ALGUM PROCESSAMENTO)
-    1b- SE NAO (READ MISS - 1)
-        --VERIFICA SE EXISTEM CÓPIAS EM OUTRA CACHES
-        --MOSTRA O DADO (OU FAZ ALGUM PROCESSAMENTO)
-*/    
-int leitura(int idCache, int enderecoRam)
+VERIFICA SE A CACHE ESTÁ PREENCHIDA OU NAO
+    1- SE SIM, ATRIBUI DA RAM, COM FIFO
+    2- SE NAO, ATRIBUI DA RAM, UMA LINHA ALEATORIA NAO PREENCHIDA
+*/
+void mapeiaPelaRAM(int linha, int idCache, int bloco, int dado)
 {
-    int bloco = obterBloco(enderecoRam),
-        dado = obterOffset(enderecoRam),
-        hit = -1;
-    
-        // verifica se o dado está na cache
-        for (int i = 0; i < CACHE_TAM; i++)
-        {
-            // READ HIT - 0
-            if(CACHE[idCache-1].linha[i].tag.posBloco == bloco  &&  CACHE[idCache-1].linha[i].tag.estado != 'I')
-            {
-                hit = i;
-                printf("\n\nREAD HIT - O BLOCO ESTA NA CACHE: ");
-                printf(  "\n[%d] | tag[bloco : %d, estado: %c] | ", i, bloco, CACHE[idCache-1].linha[i].tag.estado);
-                if(!dado)
-                {
-                    printf("dado: %d <--|", CACHE[idCache-1].linha[i].bloco.dado[0]);
-                    printf("\n    |                            | dado: %d    |\n", CACHE[idCache-1].linha[i].bloco.dado[1]);
-                }
-                else
-                    {
-                        printf("dado: %d    |", CACHE[idCache-1].linha[i].bloco.dado[0]);
-                        printf("\n    |                            | dado: %d <--|\n", CACHE[idCache-1].linha[i].bloco.dado[1]);
-                    }
-                
-                // retorna que foi RH
-                return 0;
-            }
-            else if(CACHE[idCache-1].linha[i].tag.posBloco == bloco  &&  CACHE[idCache-1].linha[i].tag.estado == 'I')
-                {
-                    // ALGO SE O BLOCO ESTIVER INVALIDO, FUNÇÃO DE GERENCIAR PROVAVELMENTE
-                    // return 1;
-                }
-        }
-        
-        // READ MISS - 1
-
-        int indiceCopias[3],
-            qntCopias = procuraCopias(idCache, indiceCopias, bloco),
-            linha;
-
-        switch (qntCopias)
-        {
-        // NAO HÁ CÓPIAS NAS OUTRAS CACHES, RETORNO IGUAL A 0
-        case 0:
-            // VER SE CACHE ESTÁ CHEIA COM A VARIAVEL PREENCHIDA. preenchida = 0: ATRIBUI A POSICAO ALEATORIA E VAZIA.
-            if(CACHE[idCache-1].preenchida == 0)
+    if(CACHE[idCache-1].preenchida == 0)
             {
                 srand(time(NULL));
 
@@ -334,7 +302,9 @@ int leitura(int idCache, int enderecoRam)
                     CACHE[idCache-1].fifoFila[CACHE[idCache-1].fifoQnt] = linha;
                     CACHE[idCache-1].fifoQnt++;
 
-                    printf("\n\nREAD MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: ", linha);
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    printf("\n!!!!! READ MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: !!!!!", linha);
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
                     imprimeLinha(linha, idCache, dado);
                 }
@@ -360,7 +330,9 @@ int leitura(int idCache, int enderecoRam)
                         if(CACHE[idCache-1].fifoQnt >= CACHE_TAM)
                             CACHE[idCache-1].preenchida = 1;
 
-                        printf("\n\nREAD MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: ", linha);
+                        printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        printf("\n!!!!! READ MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: !!!!!", linha);
+                        printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                         imprimeLinha(linha, idCache, dado); 
                     }
 
@@ -383,16 +355,329 @@ int leitura(int idCache, int enderecoRam)
                     CACHE[idCache-1].linha[linha].bloco.dado[0] = RAM.dado[bloco*2];
                     CACHE[idCache-1].linha[linha].bloco.dado[1] = RAM.dado[bloco*2 + 1];
                 
-                    printf("\n\nREAD MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: ", linha);
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    printf("\n!!!!! READ MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: !!!!!", linha);
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                         imprimeLinha(linha, idCache, dado);
                 }
+}
 
-            break;
+/* 
+VERIFICA SE A CACHE ESTÁ PREENCHIDA OU NAO
+    1- SE SIM, ATRIBUI DO VIZINHO, COM FIFO. E ATUALIZA PARA ESTADO S - SHARED AMBAS AS CACHES
+    2- SE NAO, ATRIBUI DO VIZINHO, UMA LINHA ALEATORIA NAO PREENCHIDA. E ATUALIZA PARA ESTADO S - SHARED AMBAS AS CACHES
+*/
+void mapeiaPeloVizinho(int linha, int idCache, int linhaVizinho, int idVizinho, int bloco, int dado)
+{
+    if(CACHE[idCache-1].preenchida == 0)
+            {
+                srand(time(NULL));
+
+                // mapeamento aleatório
+                linha = rand() % 5;
+
+                // se a linha aleatória tiver vazia mesmo
+                if(CACHE[idCache-1].linha[linha].tag.posBloco == -1)
+                {
+                    CACHE[idCache-1].linha[linha].tag.posBloco = bloco;
+                    CACHE[idCache-1].linha[linha].tag.estado = 'S';
+                    CACHE[idCache-1].linha[linha].bloco.dado[0] = CACHE[idVizinho-1].linha[linhaVizinho].bloco.dado[0];
+                    CACHE[idCache-1].linha[linha].bloco.dado[1] = CACHE[idVizinho-1].linha[linhaVizinho].bloco.dado[1];
+                    CACHE[idCache-1].fifoFila[CACHE[idCache-1].fifoQnt] = linha;
+                    CACHE[idCache-1].fifoQnt++;
+
+                    CACHE[idVizinho-1].linha[linhaVizinho].tag.estado = 'S';
+
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    printf("\n!!!!!   READ MISS - O BLOCO NAO ESTA NA CACHE, MAS ESTA NA LINHA [%d] DA CACHE %d VIZINHA, E FOI INSERIDO NA POSICAO [%d]    !!!!!", linhaVizinho, idVizinho, linha);
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    imprimeLinha(linha, idCache, dado);
+                }
+                // se a linha sorteada nao estar vazia, percorre ela até encontrar uma linha vazia
+                else
+                    {
+                        do
+                        {
+                            if(linha == 4)
+                                linha = 0;
+                            else
+                                linha++;
+                        }while(CACHE[idCache-1].linha[linha].tag.posBloco != -1);
+
+                        CACHE[idCache-1].linha[linha].tag.posBloco = bloco;
+                        CACHE[idCache-1].linha[linha].tag.estado = 'S';
+                        CACHE[idCache-1].linha[linha].bloco.dado[0] = CACHE[idVizinho-1].linha[linhaVizinho].bloco.dado[0];
+                        CACHE[idCache-1].linha[linha].bloco.dado[1] = CACHE[idVizinho-1].linha[linhaVizinho].bloco.dado[1];
+                        CACHE[idCache-1].fifoFila[CACHE[idCache-1].fifoQnt] = linha;
+                        CACHE[idCache-1].fifoQnt++;
+
+                        CACHE[idVizinho-1].linha[linhaVizinho].tag.estado = 'S';
+
+                        // verifica se preencheu a cache
+                        if(CACHE[idCache-1].fifoQnt >= CACHE_TAM)
+                            CACHE[idCache-1].preenchida = 1;
+
+                        printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        printf("\n!!!!!   READ MISS - O BLOCO NAO ESTA NA CACHE, MAS ESTA NA LINHA [%d] DA CACHE %d VIZINHA, E FOI INSERIDO NA POSICAO [%d]   !!!!!", linhaVizinho, idVizinho, linha);
+                        printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                        imprimeLinha(linha, idCache, dado); 
+                    }
+
+            }
+            //  preenchida = 1: ESTÁ PREENCHIDA ENTAO USA POLITICA DE SUBSTITUIÇÃO FIFO
+            else
+            // 
+                {
+                    // atribui a linha a ser substituida a que entrou por primeiro (First-In First-Out)
+                    linha = CACHE[idCache-1].fifoFila[0];
+
+                    // atualiza a fila
+                    for (int i = 1; i < CACHE_TAM; i++)
+                        CACHE[idCache-1].fifoFila[i - 1] = CACHE[idCache-1].fifoFila[i];
+                    CACHE[idCache-1].fifoFila[4] = linha;
+                    
+                    // substitui a linha
+                    CACHE[idCache-1].linha[linha].tag.posBloco = bloco;
+                    CACHE[idCache-1].linha[linha].tag.estado = 'S';
+                    CACHE[idCache-1].linha[linha].bloco.dado[0] = CACHE[idVizinho-1].linha[linhaVizinho].bloco.dado[0];
+                    CACHE[idCache-1].linha[linha].bloco.dado[1] = CACHE[idVizinho-1].linha[linhaVizinho].bloco.dado[1];
+                
+                    CACHE[idVizinho-1].linha[linhaVizinho].tag.estado = 'S';
+
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    printf("\n!!!!!   READ MISS - O BLOCO NAO ESTA NA CACHE, MAS ESTA NA LINHA [%d] DA CACHE %d VIZINHA, E FOI INSERIDO NA POSICAO [%d]   !!!!!", linhaVizinho, idVizinho, linha);
+                    printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    imprimeLinha(linha, idCache, dado);
+                }
+}
+
+
+
+
+/* 
+LEITURA: 
+1- VERIFICA SE EXISTE NA CACHE
+    1a- SE SIM (READ HIT  - 0), APENAS MOSTRA O DADO (OU FAZ ALGUM PROCESSAMENTO)
+    1b- SE NAO (READ MISS - 1)
+        --VERIFICA SE EXISTEM CÓPIAS EM OUTRA CACHES
+        --MOSTRA O DADO (OU FAZ ALGUM PROCESSAMENTO)
+*/    
+int leitura(int idCache, int enderecoRam)
+{
+    int bloco = obterBloco(enderecoRam),
+        dado = obterOffset(enderecoRam);
+    
+        // verifica se o dado está na cache
+        for (int i = 0; i < CACHE_TAM; i++)
+            // ### READ HIT - 0 ###
+            if(CACHE[idCache-1].linha[i].tag.posBloco == bloco  &&  CACHE[idCache-1].linha[i].tag.estado != 'I')
+            {
+                printf("\n++++++++++++++++++++++++++++++++++++++++++++++");
+                printf("\n+++++ READ HIT - O BLOCO ESTA NA CACHE:  +++++");
+                printf("\n++++++++++++++++++++++++++++++++++++++++++++++");
+                imprimeLinha(i, idCache, dado);
+                
+                // retorna que foi RH
+                return 0;
+            }
+            
         
+        // #### READ MISS - 1 ###
+
+        int indiceCopias[3] = {-1, -1, -1},
+            qntCopias = procuraCopias(idCache, indiceCopias, bloco),
+            linha;
+
+        switch (qntCopias)
+        {
+        // NAO HÁ CÓPIAS NAS OUTRAS CACHES, RETORNO IGUAL A 0
+        case 0:
+            // VER SE CACHE ESTÁ CHEIA COM A VARIAVEL PREENCHIDA. preenchida = 0: ATRIBUI A POSICAO ALEATORIA E VAZIA.
+            mapeiaPelaRAM(linha, idCache, bloco, dado);
+            
+            return 1;
+        
+        // HÁ UMA CÓPIA NAS OUTRAS CACHES
         case 1:
+            int linhaCopia;
+            
+            // SÓ PARA VERIFICAR EM QUAL CACHE ESTÁ A CÓPIA
+            switch (idCache)
+            {
+            case 1:
+                // SE A CÓPIA ESTIVER NA CACHE 2  (POIS indiceCopias[idCache-1] GUARDA A LINHA AONDE SE ENCONTRA A CÓPIA)
+                if(indiceCopias[1] != -1)
+                {   
+                    // linha copia recebe a linha aonde se encontra a copia
+                    linhaCopia = indiceCopias[1];
+                    
+                    // se estado = E - Exclusive
+                    if(CACHE[1].linha[linhaCopia].tag.estado == 'E')
+                    {
+                        mapeiaPeloVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+
+                        // retorna 1, indicando RM - Read Miss 
+                        return 1;
+                    }
+                    // se estado = M - Modified
+                    else if(CACHE[1].linha[linhaCopia].tag.estado == 'M')
+                        {
+                            mapeiaPeloVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+
+                            // atualiza o bloco da RAM pela cache vizinha (mais seguro)
+                            RAM.dado[bloco*2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+
+                            // retorna 1, indicando RM - Read Miss 
+                            return 1;
+                        }
+                // ENTAO COPIA ESTÁ NA LINHA 3
+                }else
+                    {
+                        // linha copia recebe a linha aonde se encontra a copia
+                        linhaCopia = indiceCopias[2];
+                        
+                        // se estado = E - Exclusive
+                        if(CACHE[2].linha[linhaCopia].tag.estado == 'E')
+                        {
+                            mapeiaPeloVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+
+                            // retorna 1, indicando RM - Read Miss 
+                            return 1;
+                        }
+                        // se estado = M - Modified
+                        else if(CACHE[2].linha[linhaCopia].tag.estado == 'M')
+                            {
+                                mapeiaPeloVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+
+                                // atualiza o bloco da RAM pela cache vizinha (mais seguro)
+                                RAM.dado[bloco*2 + dado] = CACHE[2].linha[linhaCopia].bloco.dado[dado];
+
+                                // retorna 1, indicando RM - Read Miss 
+                                return 1;
+                            }
+                    }
+                
+                break;
+            
+            case 2:
+                // SE A CÓPIA ESTIVER NA CACHE 1  (POIS indiceCopias[idCache-1] GUARDA A LINHA AONDE SE ENCONTRA A CÓPIA)
+                if(indiceCopias[0] != -1)
+                {   
+                    // linha copia recebe a linha aonde se encontra a copia
+                    linhaCopia = indiceCopias[0];
+                    
+                    // se estado = E - Exclusive
+                    if(CACHE[0].linha[linhaCopia].tag.estado == 'E')
+                    {
+                        mapeiaPeloVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+
+                        // retorna 1, indicando RM - Read Miss 
+                        return 1;
+                    }
+                    // se estado = M - Modified
+                    else if(CACHE[0].linha[linhaCopia].tag.estado == 'M')
+                        {
+                            mapeiaPeloVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+
+                            // atualiza o bloco da RAM pela cache vizinha (mais seguro)
+                            RAM.dado[bloco*2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+
+                            // retorna 1, indicando RM - Read Miss 
+                            return 1;
+                        }
+                // ENTAO COPIA ESTÁ NA LINHA 3
+                }else
+                    {
+                        // linha copia recebe a linha aonde se encontra a copia
+                        linhaCopia = indiceCopias[2];
+                        
+                        // se estado = E - Exclusive
+                        if(CACHE[2].linha[linhaCopia].tag.estado == 'E')
+                        {
+                            mapeiaPeloVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+
+                            // retorna 1, indicando RM - Read Miss 
+                            return 1;
+                        }
+                        // se estado = M - Modified
+                        else if(CACHE[2].linha[linhaCopia].tag.estado == 'M')
+                            {
+                                mapeiaPeloVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+
+                                // atualiza o bloco da RAM pela cache vizinha (mais seguro)
+                                RAM.dado[bloco*2 + dado] = CACHE[2].linha[linhaCopia].bloco.dado[dado];
+
+                                // retorna 1, indicando RM - Read Miss 
+                                return 1;
+                            }
+                    }
+                
+                break;
+
+            case 3:
+                // SE A CÓPIA ESTIVER NA CACHE 1  (POIS indiceCopias[idCache-1] GUARDA A LINHA AONDE SE ENCONTRA A CÓPIA)
+                if(indiceCopias[0] != -1)
+                {   
+                    // linha copia recebe a linha aonde se encontra a copia
+                    linhaCopia = indiceCopias[0];
+                    
+                    // se estado = E - Exclusive
+                    if(CACHE[0].linha[linhaCopia].tag.estado == 'E')
+                    {
+                        mapeiaPeloVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+
+                        // retorna 1, indicando RM - Read Miss 
+                        return 1;
+                    }
+                    // se estado = M - Modified
+                    else if(CACHE[0].linha[linhaCopia].tag.estado == 'M')
+                        {
+                            mapeiaPeloVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+
+                            // atualiza o bloco da RAM pela cache vizinha (mais seguro)
+                            RAM.dado[bloco*2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+
+                            // retorna 1, indicando RM - Read Miss 
+                            return 1;
+                        }
+                // ENTAO COPIA ESTÁ NA LINHA 2
+                }else
+                    {
+                        // linha copia recebe a linha aonde se encontra a copia
+                        linhaCopia = indiceCopias[1];
+                        
+                        // se estado = E - Exclusive
+                        if(CACHE[1].linha[linhaCopia].tag.estado == 'E')
+                        {
+                            mapeiaPeloVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+
+                            // retorna 1, indicando RM - Read Miss 
+                            return 1;
+                        }
+                        // se estado = M - Modified
+                        else if(CACHE[1].linha[linhaCopia].tag.estado == 'M')
+                            {
+                                mapeiaPeloVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+
+                                // atualiza o bloco da RAM pela cache vizinha (mais seguro)
+                                RAM.dado[bloco*2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+
+                                // retorna 1, indicando RM - Read Miss 
+                                return 1;
+                            }
+                    }
+                
+                break;
+
+            default:
+                printf("\n\nALGUM ERRO OCORREU! ABORTANDO OPERACAO ...");
+
+                break;
+            }
 
             break;
 
+        // HÁ 2 CÓPIAS NAS OUTRAS CACHES (ESCOLHER ARBITRARIAMENTE 1 PARA COPIAR)
         case 2:
 
             break;
@@ -416,18 +701,26 @@ void *simula(void *ptr)
     int end, transacao;
 
     printf("\n\n###############################################");
-    printf(  "\n############## PROCESSADOR <%d> ################", t->id);
-    printf(  "\n## Voce deseja fazer uma leitura ou escrita? ##");
+    printf(  "\n##                                           ##");
+    printf(  "\n##              PROCESSADOR <%d>              ##", t->id);
+    printf(  "\n##                                           ##");
+    printf(  "\n## Voce deseja fazer uma leitura ou escrita: ##");
     printf(  "\n##               Leitura <1>                 ##");
     printf(  "\n##               Escrita <2>                 ##");
-    printf(  "\n###############################################\nL/E: ");
+    printf(  "\n##                                           ##");
+    printf(  "\n##  Para imprimir na tela os estados atuais: ##");
+    printf(  "\n##            Mostrar Caches <3>             ##");
+    printf(  "\n##                                           ##");
+    printf(  "\n###############################################\n<L/E/M>: ");
     scanf(" %c", &op);
 
+    printf("\n----------------------------------------------------------------\n");
+    
     switch (op)
     {
     case '1':
-        printf("\n\n***** <1> LEITURA - SOLICITACAO DE DADO SEM ALTERACAO DO VALOR: *****");
-        printf(  "\n -> Entre com o endereco da memoria principal desejado [0 <= end <= 49]: ");
+        printf("\n\n###### <1> LEITURA - SOLICITACAO DE DADO SEM ALTERACAO DO VALOR: ######");
+        printf(  "\n-> Entre com o endereco da memoria principal desejado [0 <= end <= 49]: ");
         scanf("%d", &end);
 
         while(end < 0 || end > 49)
@@ -443,7 +736,7 @@ void *simula(void *ptr)
     
     case '2':
         printf("\n\n####### <2> ESCRITA - SOLICITACAO DE DADO COM ALTERACAO DO VALOR: #######");
-        printf(  "\n## Entre com o endereco da memoria principal desejado [0 <= end <= 49]:  ");
+        printf(  "\n-> Entre com o endereco da memoria principal desejado [0 <= end <= 49]:  ");
         scanf("%d", &end);
 
         // transacao = int escrita(int idCache, int enderecoRam);
@@ -484,13 +777,13 @@ void main()
 {
     srand(time(NULL));
 
-    printf("\nBEM VINDO AO SIMULADOR DE MEMORIA CACHE GERENCIADA POR PROTOCOLO MESI");
+    printf("\nBEM VINDO AO SIMULADOR DE MEMORIA CACHE GERENCIADA POR PROTOCOLO MESI!\n");
 
     // INICIALIZA A RAM E AS 3 CACHES 
     initRAM(&RAM);
-    initCache(&CACHE[0]);
-    initCache(&CACHE[1]);
-    initCache(&CACHE[2]); 
+    initCache(&CACHE[0], 1);
+    initCache(&CACHE[1], 2);
+    initCache(&CACHE[2], 3); 
 
     // INICIALIZAÇÃO DAS THREADS e seus pacotes (por enquanto só ID, talvez depois só tbm)
     pthread_t thread[CPU_QNT];
@@ -516,15 +809,15 @@ void main()
 
     do
     {
-        printf("\n\n***********************************************************");
-        printf  ("\n*******             Escolha um <#CPU#>              *******");
-        printf("\n\n******                <1>  <2>  <3>                  ******");
-        printf("\n\n******                                               ******");
-        printf("\n\n******            Ou tecle 0 para <SAIR>             ******");
-        printf("\n\n*******                    <0>                      *******");
-        printf("\n\n***********************************************************\nCPU: ");
+        printf("\n\n###########################################################");
+        printf  ("\n##*****             Escolha um <#CPU#>              *****##");
+        printf("\n\n#*****                <1>  <2>  <3>                  *****#");
+        printf("\n\n#*****                                               *****#");
+        printf("\n\n#*****            Ou tecle 0 para <SAIR>             *****#");
+        printf("\n\n##*****                    <0>                      *****##");
+        printf("\n\n###########################################################\nCPU: ");
         scanf(" %c", &opCPU);
-
+        printf("\n----------------------------------------------------------------\n");
 
         switch (opCPU)
         {
