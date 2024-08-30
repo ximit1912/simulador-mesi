@@ -3,6 +3,8 @@
 #include <time.h>
 #include <pthread.h>
 
+
+
 /* ********************************************************************* */
 /* ********************************************************************* */
 /* Definições */
@@ -12,9 +14,6 @@
 #define CACHE_TAM 5
 #define CPU_QNT 3
 
-// ESTADOS PROTOCOLO MESI (R: RWITM - Read With Intent To Modifie)
-char MESI[5] = {'R', 'M', 'E', 'S', 'I'};
-
 typedef struct
 {
     int id;
@@ -22,6 +21,8 @@ typedef struct
     /* outras variáveis se necessário */
 
 } tPacote;
+
+
 
 /* ********************************************************************* */
 /* ********************************************************************* */
@@ -52,9 +53,11 @@ typedef struct
 {
     cacheLinha linha[CACHE_TAM];
     int *fifoFila,
-        fifoQnt; // para o algoritmo de substituição FIFO
+         fifoQnt; // para o algoritmo de substituição FIFO
     int preenchida;
 } Cache;
+
+
 
 /* ===================================================================== */
 /* Estrutura da RAM */
@@ -65,12 +68,16 @@ typedef struct
     int dado[RAM_TAM];
 } Ram;
 
+
+
 /* ********************************************************************* */
 /* ********************************************************************* */
 /* Inicialização das Caches e RAM */
 
 Ram RAM;
 Cache CACHE[CPU_QNT];
+
+
 
 /* ********************************************************************* */
 /* ********************************************************************* */
@@ -87,7 +94,6 @@ int obterOffset(int endereco)
 {
     return endereco % BLOCO_TAM;
 }
-
 
 
 
@@ -117,7 +123,6 @@ void initCache(Cache *cache, int id)
     cache->fifoQnt = 0;
     cache->preenchida = 0;
 }
-
 
 
 
@@ -160,7 +165,6 @@ void imprimeLinha(int linha, int idCache, int dado)
         printf("                    #DADO: %d <--", CACHE[idCache - 1].linha[linha].bloco.dado[1]);
     }
 }
-
 
 
 
@@ -257,7 +261,6 @@ int procuraCopias(int idCache, int *indCopias, int bloco)
 
     return copias;
 }
-
 
 
 
@@ -367,7 +370,7 @@ VERIFICA SE A CACHE ESTÁ PREENCHIDA OU NAO
     1- SE SIM, ATRIBUI DO VIZINHO, COM FIFO. E ATUALIZA PARA ESTADO S - SHARED AMBAS AS CACHES
     2- SE NAO, ATRIBUI DO VIZINHO, UMA LINHA ALEATORIA NAO PREENCHIDA. E ATUALIZA PARA ESTADO S - SHARED AMBAS AS CACHES
 */
-void LeDoVizinho(int linha, int idCache, int linhaVizinho, int idVizinho, int bloco, int dado)
+void leDoVizinho(int linha, int idCache, int linhaVizinho, int idVizinho, int bloco, int dado)
 {
     if (CACHE[idCache - 1].preenchida == 0)
     {
@@ -471,6 +474,8 @@ void LeDoVizinho(int linha, int idCache, int linhaVizinho, int idVizinho, int bl
     }
 }
 
+
+
 /*
 LEITURA:
 1- VERIFICA SE EXISTE NA CACHE
@@ -534,7 +539,7 @@ int leitura(int idCache, int enderecoRam)
                 if (CACHE[1].linha[linhaCopia].tag.estado == 'E')
                 {
                     // copia a linha do vizinho
-                    LeDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
 
                     // retorna 1, indicando RM - Read Miss
                     return 1;
@@ -542,7 +547,7 @@ int leitura(int idCache, int enderecoRam)
                 // se estado = M - Modified
                 else if (CACHE[1].linha[linhaCopia].tag.estado == 'M')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
 
                     // atualiza o bloco da RAM pela cache vizinha (mais seguro)
                     RAM.dado[bloco * 2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
@@ -557,13 +562,13 @@ int leitura(int idCache, int enderecoRam)
 
                 if (CACHE[2].linha[linhaCopia].tag.estado == 'E')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
 
                     return 1;
                 }
                 else if (CACHE[2].linha[linhaCopia].tag.estado == 'M')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
 
                     RAM.dado[bloco * 2 + dado] = CACHE[2].linha[linhaCopia].bloco.dado[dado];
 
@@ -581,15 +586,15 @@ int leitura(int idCache, int enderecoRam)
 
                 if (CACHE[0].linha[linhaCopia].tag.estado == 'E')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
 
                     return 1;
                 }
                 else if (CACHE[0].linha[linhaCopia].tag.estado == 'M')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
 
-                    RAM.dado[bloco * 2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+                    RAM.dado[bloco * 2 + dado] = CACHE[0].linha[linhaCopia].bloco.dado[dado];
 
                     return 1;
                 }
@@ -601,13 +606,13 @@ int leitura(int idCache, int enderecoRam)
 
                 if (CACHE[2].linha[linhaCopia].tag.estado == 'E')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
 
                     return 1;
                 }
                 else if (CACHE[2].linha[linhaCopia].tag.estado == 'M')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 3, bloco, dado);
 
                     RAM.dado[bloco * 2 + dado] = CACHE[2].linha[linhaCopia].bloco.dado[dado];
 
@@ -625,15 +630,15 @@ int leitura(int idCache, int enderecoRam)
 
                 if (CACHE[0].linha[linhaCopia].tag.estado == 'E')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
 
                     return 1;
                 }
                 else if (CACHE[0].linha[linhaCopia].tag.estado == 'M')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 1, bloco, dado);
 
-                    RAM.dado[bloco * 2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+                    RAM.dado[bloco * 2 + dado] = CACHE[0].linha[linhaCopia].bloco.dado[dado];
 
                     return 1;
                 }
@@ -645,13 +650,13 @@ int leitura(int idCache, int enderecoRam)
 
                 if (CACHE[1].linha[linhaCopia].tag.estado == 'E')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
 
                     return 1;
                 }
                 else if (CACHE[1].linha[linhaCopia].tag.estado == 'M')
                 {
-                    LeDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
+                    leDoVizinho(linha, idCache, linhaCopia, 2, bloco, dado);
 
                     RAM.dado[bloco * 2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
 
@@ -682,7 +687,7 @@ int leitura(int idCache, int enderecoRam)
             // linhaCopiaArb recebe a linha aonde se encontra a copia
             linhaCopiaArb = indiceCopias[1];
 
-            LeDoVizinho(linha, idCache, linhaCopiaArb, 2, bloco, dado);
+            leDoVizinho(linha, idCache, linhaCopiaArb, 2, bloco, dado);
 
             // retorna 1, indicando RM - Read Miss
             return 1;
@@ -691,7 +696,7 @@ int leitura(int idCache, int enderecoRam)
         case 2:
             linhaCopiaArb = indiceCopias[0];
 
-            LeDoVizinho(linha, idCache, linhaCopiaArb, 1, bloco, dado);
+            leDoVizinho(linha, idCache, linhaCopiaArb, 1, bloco, dado);
 
             return 1;
 
@@ -699,7 +704,7 @@ int leitura(int idCache, int enderecoRam)
         case 3:
             linhaCopiaArb = indiceCopias[0];
 
-            LeDoVizinho(linha, idCache, linhaCopiaArb, 1, bloco, dado);
+            leDoVizinho(linha, idCache, linhaCopiaArb, 1, bloco, dado);
 
             return 1;
         }
@@ -738,7 +743,7 @@ int escrita(int idCache, int enderecoRam)
         if (CACHE[idCache - 1].linha[i].tag.posBloco == bloco && CACHE[idCache - 1].linha[i].tag.estado == 'M')
         {
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++");
-            printf("\n+++++ WRITE HIT - O BLOCO ESTA NA CACHE:  +++++");
+            printf("\n+++++  WRITE HIT - O BLOCO ESTA NA CACHE   +++++");
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++");
             imprimeLinha(i, idCache, dado);
 
@@ -756,7 +761,7 @@ int escrita(int idCache, int enderecoRam)
         else if (CACHE[idCache - 1].linha[i].tag.posBloco == bloco && CACHE[idCache - 1].linha[i].tag.estado == 'E')
         {
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++");
-            printf("\n+++++ WRITE HIT - O BLOCO ESTA NA CACHE:  +++++");
+            printf("\n+++++  WRITE HIT - O BLOCO ESTA NA CACHE   +++++");
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++");
             imprimeLinha(i, idCache, dado);
 
@@ -797,7 +802,7 @@ int escrita(int idCache, int enderecoRam)
 
                         // invalida a outra cópia
                         CACHE[1].linha[linhaCopia].tag.estado = 'I';
-                        printf("\n\n!!Cópia Invalidada!!\n\n");
+                        printf("\n\n!!Copia Invalidada!!\n\n");
 
                         printf("\n-> Entre com o valor novo para sobreescrever o dado: [0 <= dadoNovo <= 999]: ");
                         scanf("%d", &dadoNovo);
@@ -818,7 +823,7 @@ int escrita(int idCache, int enderecoRam)
 
                         // invalida a outra cópia
                         CACHE[2].linha[linhaCopia].tag.estado = 'I';
-                        printf("\n\n!!Cópia Invalidada!!\n\n");
+                        printf("\n\n!!Copia Invalidada!!\n\n");
 
                         printf("\n-> Entre com o valor novo para sobreescrever o dado: [0 <= dadoNovo <= 999]: ");
                         scanf("%d", &dadoNovo);
@@ -1024,7 +1029,7 @@ int escrita(int idCache, int enderecoRam)
         linha = leDaRam(linha, idCache, bloco, dado);
 
         printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        printf("\n!!!!! WRITE MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: !!!!!", linha);
+        printf("\n!!!!!  WRITE MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]  !!!!!", linha);
         printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
         printf("\n-> Entre com o valor novo para sobreescrever o dado: [0 <= dadoNovo <= 999]: ");
@@ -1054,18 +1059,21 @@ int escrita(int idCache, int enderecoRam)
 
                 // se a cópia for M - Modified, então atualiza na RAM antes
                 if(CACHE[1].linha[linhaCopia].tag.estado == 'M')
+                {
                     RAM.dado[bloco*2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
+                    printf("\n\n!!Dado atualizado na RAM na posicao %d!!\n\n", bloco*2 + dado);
+                }
                 // senão é E - Exclusive então não faz nada
  
                 // invalida a outra cópia
                 CACHE[1].linha[linhaCopia].tag.estado = 'I';
-                printf("\n\n!!Cópia Invalidada;!!\n\n");
+                printf("\n\n!!Copia Invalidada!!\n\n");
 
                 // copia o bloco já atualizado da RAM
                 linha = leDaRam(linha, idCache, bloco, dado);
 
                 printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                printf("\n!!!!! WRITE MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: !!!!!", linha);
+                printf("\n!!!!!  WRITE MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]  !!!!!", linha);
                 printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 
@@ -1088,8 +1096,10 @@ int escrita(int idCache, int enderecoRam)
 
                 // se a cópia for M - Modified, então atualiza na RAM antes
                 if(CACHE[2].linha[linhaCopia].tag.estado == 'M')
+                {
                     RAM.dado[bloco*2 + dado] = CACHE[2].linha[linhaCopia].bloco.dado[dado];
-
+                    printf("\n\n!!Dado atualizado na RAM na posicao %d!!\n\n", bloco*2 + dado);
+                }
                 // invalida a outra cópia
                 CACHE[2].linha[linhaCopia].tag.estado = 'I';
                 printf("\n\n!!Copia Invalidada!!\n\n");
@@ -1123,10 +1133,13 @@ int escrita(int idCache, int enderecoRam)
                 linhaCopia = indiceCopias[0];
 
                 if(CACHE[0].linha[linhaCopia].tag.estado == 'M')
+                {
                     RAM.dado[bloco*2 + dado] = CACHE[0].linha[linhaCopia].bloco.dado[dado];
+                    printf("\n\n!!Dado atualizado na RAM na posicao %d!!\n\n", bloco*2 + dado);
+                }
 
                 CACHE[0].linha[linhaCopia].tag.estado = 'I';
-                printf("\n\n!!Cópia Invalidada!!\n\n");
+                printf("\n\n!!Copia Invalidada!!\n\n");
 
                 linha = leDaRam(linha, idCache, bloco, dado);
 
@@ -1153,7 +1166,10 @@ int escrita(int idCache, int enderecoRam)
 
                 // se a cópia for M - Modified, então atualiza na RAM antes
                 if(CACHE[2].linha[linhaCopia].tag.estado == 'M')
+                {
                     RAM.dado[bloco*2 + dado] = CACHE[2].linha[linhaCopia].bloco.dado[dado];
+                    printf("\n\n!!Dado atualizado na RAM na posicao %d!!\n\n", bloco*2 + dado);
+                }
 
                 // invalida a outra cópia
                 CACHE[2].linha[linhaCopia].tag.estado = 'I';
@@ -1188,7 +1204,10 @@ int escrita(int idCache, int enderecoRam)
 
                 // se a cópia for M - Modified, então atualiza na RAM antes
                 if(CACHE[0].linha[linhaCopia].tag.estado == 'M')
+                {
                     RAM.dado[bloco*2 + dado] = CACHE[0].linha[linhaCopia].bloco.dado[dado];
+                    printf("\n\n!!Dado atualizado na RAM na posicao %d!!\n\n", bloco*2 + dado);
+                }
 
                 // invalida a outra cópia
                 CACHE[0].linha[linhaCopia].tag.estado = 'I';
@@ -1198,7 +1217,7 @@ int escrita(int idCache, int enderecoRam)
                 linha = leDaRam(linha, idCache, bloco, dado);
 
                 printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                printf("\n!!!!! WRITE MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]: !!!!!", linha);
+                printf("\n!!!!!  WRITE MISS - O BLOCO NAO ESTA NA CACHE E FOI INSERIDO NA POSICAO [%d]  !!!!!", linha);
                 printf("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
                 printf("\n-> Entre com o valor novo para sobreescrever o dado: [0 <= dadoNovo <= 999]: ");
@@ -1220,8 +1239,10 @@ int escrita(int idCache, int enderecoRam)
 
                 // se a cópia for M - Modified, então atualiza na RAM antes
                 if(CACHE[1].linha[linhaCopia].tag.estado == 'M')
+                {
                     RAM.dado[bloco*2 + dado] = CACHE[1].linha[linhaCopia].bloco.dado[dado];
-
+                    printf("\n\n!!Dado atualizado na RAM na posicao %d!!\n\n", bloco*2 + dado);
+                }
                 // invalida a outra cópia
                 CACHE[1].linha[linhaCopia].tag.estado = 'I';
                 printf("\n\n!!Copia Invalidada!!\n\n");
@@ -1345,6 +1366,8 @@ int escrita(int idCache, int enderecoRam)
     }
 }
 
+
+
 // FUNÇÃO PRINCIPAL DAS THREADS (PROCESSADORES)
 void *simula(void *ptr)
 {
@@ -1417,10 +1440,11 @@ void *simula(void *ptr)
     }
 }
 
+
+
 /* ********************************************************************* */
 /* ********************************************************************* */
 /* Código main */
-
 void main()
 {
     srand(time(NULL));
